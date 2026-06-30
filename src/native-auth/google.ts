@@ -31,6 +31,7 @@ export const performGoogleLogin = async (): Promise<GoogleSignInResult> => {
     }
 
     const response = await GoogleSignin.signIn();
+    console.log("[google] signIn response:", JSON.stringify(response));
 
     if (response.type === "cancelled") {
       return { status: "cancelled" };
@@ -38,11 +39,13 @@ export const performGoogleLogin = async (): Promise<GoogleSignInResult> => {
 
     const serverAuthCode = response.data?.serverAuthCode;
     if (!serverAuthCode) {
+      console.warn("[google] serverAuthCode 없음. data:", JSON.stringify(response.data));
       return { status: "error", message: "서버 인증 코드를 받지 못했습니다." };
     }
 
     return { status: "success", serverAuthCode };
   } catch (error) {
+    console.warn("[google] signIn error:", JSON.stringify(error), error);
     if (isErrorWithCode(error)) {
       if (
         error.code === statusCodes.SIGN_IN_CANCELLED ||
