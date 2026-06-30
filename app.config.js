@@ -39,6 +39,14 @@ const config = {
         iosUrlScheme: process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME ?? "",
       },
     ],
+    [
+      "expo-build-properties",
+      {
+        // Google SDK(AppCheckCore → GoogleUtilities) Swift static lib 통합 문제 해결
+        // 없으면 pod install 시 "use_modular_headers!" 를 Podfile 에 수동 추가해야 함
+        ios: { useFrameworks: "static" },
+      },
+    ],
   ],
 };
 
