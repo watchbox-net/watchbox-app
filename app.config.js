@@ -9,6 +9,7 @@ const config = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: "net.watchbox.app",
+    usesAppleSignIn: true,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSAppTransportSecurity: {
@@ -30,6 +31,7 @@ const config = {
     favicon: "./assets/favicon.png",
   },
   plugins: [
+    "expo-apple-authentication",
     [
       "@react-native-google-signin/google-signin",
       {

@@ -10,6 +10,7 @@ import { useBackHandler } from "../lib/useBackHandler";
 import { isInAppUrl, openExternalUrl } from "../lib/linking";
 import { WEB_URL } from "../config/env";
 import { performGoogleLogin } from "../native-auth/google";
+import { performAppleLogin } from "../native-auth/apple";
 
 const WebViewScreen = () => {
   const webViewRef = useRef<WebView>(null);
@@ -67,6 +68,13 @@ const WebViewScreen = () => {
       if (data?.type === "NATIVE_GOOGLE_LOGIN") {
         performGoogleLogin().then((result) => {
           dispatchToWeb({ type: "NATIVE_GOOGLE_LOGIN_RESULT", ...result });
+        });
+        return;
+      }
+
+      if (data?.type === "NATIVE_APPLE_LOGIN") {
+        performAppleLogin().then((result) => {
+          dispatchToWeb({ type: "NATIVE_APPLE_LOGIN_RESULT", ...result });
         });
         return;
       }
