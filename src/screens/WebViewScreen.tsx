@@ -9,6 +9,7 @@ import type {
 import { useBackHandler } from "../lib/useBackHandler";
 import { isInAppUrl, openExternalUrl } from "../lib/linking";
 import { WEB_URL } from "../config/env";
+import { performGoogleLogin } from "../native-auth/google";
 
 const WebViewScreen = () => {
   const webViewRef = useRef<WebView>(null);
@@ -42,12 +43,38 @@ const WebViewScreen = () => {
     return false;
   }, []);
 
-  // Web → Native 메시지 수신 (Stage 2 에서 bridge 로 확장)
-  const handleMessage = useCallback((event: WebViewMessageEvent) => {
-    const raw = event.nativeEvent.data;
-    if (!raw || typeof raw !== "string" || raw.length > 500_000) return;
-    if (__DEV__) console.log("[webview] message:", raw);
+  // 네이티브 → 웹으로 CustomEvent 디스패치 (웹의 waitForNativeResult 가 수신)
+  const dispatchToWeb = useCallback((detail: object) => {
+    const json = JSON.stringify(detail).replace(/'/g, "\\'");
+    webViewRef.current?.injectJavaScript(
+      `window.dispatchEvent(new CustomEvent('rnMessage', { detail: ${json} })); true;`,
+    );
   }, []);
+
+  // Web → Native 메시지 수신 (bridge 핸들러)
+  const handleMessage = useCallback(
+    (event: WebViewMessageEvent) => {
+      const raw = event.nativeEvent.data;
+      if (!raw || typeof raw !== "string" || raw.length > 500_000) return;
+
+      let data: { type?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        return;
+      }
+
+      if (data?.type === "NATIVE_GOOGLE_LOGIN") {
+        performGoogleLogin().then((result) => {
+          dispatchToWeb({ type: "NATIVE_GOOGLE_LOGIN_RESULT", ...result });
+        });
+        return;
+      }
+
+      if (__DEV__) console.log("[webview] unhandled message:", data?.type);
+    },
+    [dispatchToWeb],
+  );
 
   return (
     <View style={styles.container}>
@@ -64,7 +91,6 @@ const WebViewScreen = () => {
         allowsBackForwardNavigationGestures
         // 새 창(target=_blank) 요청도 같은 WebView 에서 처리
         setSupportMultipleWindows={false}
-        // 미디어 자동재생 등은 추후 필요 시 조정
         originWhitelist={["*"]}
         onError={(e) => {
           if (__DEV__) {
